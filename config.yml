@@ -1,5 +1,5 @@
 app:
-  version: "1.0.0"
+  version: "1.0.1"
 
 server:
   host: ""                # bind address — empty means all interfaces (0.0.0.0)
