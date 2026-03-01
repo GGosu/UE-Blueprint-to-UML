@@ -1,0 +1,18 @@
+package templates
+
+templ Error(msg string) {
+	<p class="error">{ msg }</p>
+}
+
+templ Result(mermaidSrc string) {
+	<div class="diagram-toolbar">
+		<button class="tool-btn" onclick="openDiagramFullscreen()">⤢ Expand</button>
+		<button class="tool-btn" onclick="downloadDiagramSvg()">⬇ SVG</button>
+		<button id="copy-source-btn" class="tool-btn" onclick="copyMermaidSource()">⎘ Copy source</button>
+	</div>
+	<div class="diagram-container" onclick="openDiagramFullscreen()" title="Click to expand">
+		<pre class="mermaid">{ mermaidSrc }</pre>
+		<div class="diagram-hint">Click to expand</div>
+	</div>
+	<div id="mermaid-source" hidden>{ mermaidSrc }</div>
+}

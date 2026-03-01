@@ -1,0 +1,9 @@
+app:
+  version: "1.0.0"
+
+server:
+  host: ""                # bind address — empty means all interfaces (0.0.0.0)
+  port: 8080              # HTTP port
+
+limits:
+  max_body_kb: 25600     # maximum POST body size in kilobytes

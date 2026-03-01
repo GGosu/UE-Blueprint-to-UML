@@ -1,0 +1,76 @@
+package templates
+
+templ Index(version string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>UE Blueprint → Mermaid</title>
+			<link rel="icon" href="/static/favicon.ico"/>
+			<link rel="stylesheet" href="/static/style.css"/>
+			<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+		</head>
+		<body>
+			<header class="topbar">
+				<span class="topbar-logo">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6090e0" stroke-width="2" stroke-linejoin="round">
+						<polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"></polygon>
+					</svg>
+					UE Blueprint → Mermaid
+				</span>
+				<span class="topbar-hint"><kbd>Ctrl+V</kbd> paste Blueprint · <kbd>Ctrl+C</kbd> copy Mermaid</span>
+				<div class="topbar-actions">
+					<span class="topbar-spinner" id="topbar-spinner">Converting…</span>
+					<a class="tb-btn tb-btn--icon" href="https://github.com/placeholder/UE_UML" target="_blank" rel="noopener" title="GitHub">
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+							<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+						</svg>
+					</a>
+					<button id="copy-source-btn" class="tb-btn" onclick="copyMermaidSource()">
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy Source
+					</button>
+					<button class="tb-btn tb-btn--primary" onclick="downloadDiagramSvg()">
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Save SVG
+					</button>
+				</div>
+			</header>
+			<main class="app-layout">
+				<section class="editor-pane">
+					<div class="pane-header">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<polyline points="16 18 22 12 16 6"></polyline>
+							<polyline points="8 6 2 12 8 18"></polyline>
+						</svg>
+						Generated Mermaid
+					</div>
+					<div class="code-view" id="code-view">
+						<div class="code-empty" id="code-empty">
+							<kbd>Ctrl+V</kbd>
+							<span>Paste UE Blueprint nodes</span>
+						</div>
+					</div>
+				</section>
+				<section class="viewer-pane" id="viewer-pane">
+					<div class="viewer-toolbar">
+						<button class="vt-btn" onclick="fitDiagram()" title="Fit">⊙</button>
+						<button class="vt-btn" onclick="zoomOut()" title="Zoom out">−</button>
+						<button class="vt-btn" onclick="zoomIn()" title="Zoom in">+</button>
+						<button class="vt-btn" onclick="viewerFullscreen()" title="Fullscreen">⤢</button>
+					</div>
+					<div id="viewer-canvas">
+						<div id="viewer-zoom-area">
+							<div id="result"></div>
+						</div>
+						<div class="viewer-empty" id="empty-hint">
+							Copy nodes in UE Editor <kbd>Ctrl+C</kbd><br/>
+							<span>then press <kbd>Ctrl+V</kbd> anywhere on this page</span>
+						</div>
+					</div>
+					<div class="viewer-version">v{ version }</div>
+				</section>
+			</main>
+			<script src="/static/app.js"></script>
+		</body>
+	</html>
+}
