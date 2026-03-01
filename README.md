@@ -1,5 +1,8 @@
 # UE Blueprint to UML
 
+[![CI](https://github.com/GGosu/UE-Blueprint-to-UML/actions/workflows/ci.yml/badge.svg)](https://github.com/GGosu/UE-Blueprint-to-UML/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/GGosu/UE-Blueprint-to-UML/graph/badge.svg)](https://codecov.io/gh/GGosu/UE-Blueprint-to-UML)
+
 Convert Unreal Engine Blueprint nodes into Mermaid diagrams.
 
 ## Why?
