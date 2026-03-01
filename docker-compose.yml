@@ -1,6 +1,7 @@
 services:
   ue_uml:
     build: .
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
+    container_name: ue_uml
+    restart: always
+    mem_limit: 256m
+    memswap_limit: 256m
