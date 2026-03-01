@@ -9,8 +9,9 @@ Convert Unreal Engine Blueprint nodes into Mermaid diagrams.
 
 ## Why?
 
-LLMs can't read binary `.uasset` files. This tool converts copied blueprint nodes into Mermaid flowcharts so you can
-paste them into AI chats or use them for documentation.
+Pasting Blueprint nodes raw into an LLM works, but the clipboard format is proprietary and full of node coordinates, GUIDs and pin hashes. A complex graph can produce thousands of lines of noise, burns tokens, and models don't know the format well.
+
+This tool converts that into a clean Mermaid flowchart with just the logic.
 
 1. Select nodes in UE Editor and `Ctrl+C`
 2. `Ctrl+V` on the page
