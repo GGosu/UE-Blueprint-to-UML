@@ -120,6 +120,31 @@ func TestGenerateMermaidDataEdge(t *testing.T) {
 	}
 }
 
+func TestGenerateMermaidSubgraphs(t *testing.T) {
+	g := blueprint.Graph{
+		Nodes: []blueprint.Node{
+			{ID: "E1", Kind: blueprint.KindEvent, Label: "Event1"},
+			{ID: "N1", Kind: blueprint.KindDefault, Label: "Node1"},
+			{ID: "E2", Kind: blueprint.KindEvent, Label: "Event2"},
+			{ID: "N2", Kind: blueprint.KindDefault, Label: "Node2"},
+		},
+		Edges: []blueprint.Edge{
+			{From: "E1", To: "N1", Kind: blueprint.ExecEdge},
+			{From: "E2", To: "N2", Kind: blueprint.ExecEdge},
+		},
+	}
+	out := blueprint.GenerateMermaid(g)
+	if !strings.Contains(out, "subgraph sg_0 [\"Event1\"]") {
+		t.Errorf("expected first subgraph with label Event1, got:\n%s", out)
+	}
+	if !strings.Contains(out, "subgraph sg_1 [\"Event2\"]") {
+		t.Errorf("expected second subgraph with label Event2, got:\n%s", out)
+	}
+	if !strings.Contains(out, "end") {
+		t.Error("expected 'end' for subgraphs")
+	}
+}
+
 func TestGenerateMermaidRoundTrip(t *testing.T) {
 	data, err := os.ReadFile("fixtures/case1.txt")
 	if err != nil {

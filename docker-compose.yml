@@ -5,3 +5,5 @@ services:
     restart: always
     mem_limit: 256m
     memswap_limit: 256m
+    ports:
+      - "8080:8080"

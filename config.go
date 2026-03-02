@@ -16,7 +16,10 @@ type Config struct {
 }
 
 func LoadConfig(path string) (Config, error) {
-	cfg := Config{}
+	cfg := Config{
+		Port:      8080,
+		MaxBodyKB: 25600,
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -25,12 +28,22 @@ func LoadConfig(path string) (Config, error) {
 	defer f.Close()
 
 	flat := map[string]string{}
+	var currentSection string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
+		rawLine := scanner.Text()
+		trimmed := strings.TrimSpace(rawLine)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
 			continue
 		}
+
+		// Basic section detection: if line starts with no indent and ends with ":"
+		if !strings.HasPrefix(rawLine, " ") && !strings.HasPrefix(rawLine, "\t") && strings.HasSuffix(trimmed, ":") {
+			currentSection = strings.TrimSuffix(trimmed, ":")
+			continue
+		}
+
+		line := trimmed
 		if idx := strings.Index(line, " #"); idx != -1 {
 			line = strings.TrimSpace(line[:idx])
 		}
@@ -38,30 +51,35 @@ func LoadConfig(path string) (Config, error) {
 		if idx < 0 {
 			continue
 		}
+
 		key := strings.TrimSpace(line[:idx])
 		val := strings.Trim(strings.TrimSpace(line[idx+1:]), `"'`)
 		if key != "" && val != "" {
-			flat[key] = val
+			if currentSection != "" {
+				flat[currentSection+"."+key] = val
+			} else {
+				flat[key] = val
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return cfg, fmt.Errorf("reading config: %w", err)
 	}
 
-	if v, ok := flat["host"]; ok {
+	if v, ok := flat["server.host"]; ok {
 		cfg.Host = v
 	}
-	if v, ok := flat["port"]; ok {
+	if v, ok := flat["server.port"]; ok {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			cfg.Port = n
 		}
 	}
-	if v, ok := flat["max_body_kb"]; ok {
+	if v, ok := flat["limits.max_body_kb"]; ok {
 		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
 			cfg.MaxBodyKB = n
 		}
 	}
-	if v, ok := flat["version"]; ok && v != "" {
+	if v, ok := flat["app.version"]; ok && v != "" {
 		cfg.Version = v
 	}
 
