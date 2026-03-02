@@ -41,18 +41,19 @@ type Graph struct {
 }
 
 var (
-	reBeginObject  = regexp.MustCompile(`^Begin Object Class=/Script/[^.]+\.(\w+) Name="(\w+)"`)
-	reFunctionRef  = regexp.MustCompile(`FunctionReference=\([^)]*MemberName="([^"]+)"`)
-	reEventRef     = regexp.MustCompile(`EventReference=\([^)]*MemberName="([^"]+)"`)
-	reVariableRef  = regexp.MustCompile(`VariableReference=\([^)]*MemberName="([^"]+)"`)
-	rePinId        = regexp.MustCompile(`\bPinId=([A-F0-9]{32})\b`)
-	rePinName      = regexp.MustCompile(`\bPinName="([^"]*)"`)
-	rePinCategory  = regexp.MustCompile(`PinType\.PinCategory="([^"]*)"`)
-	rePinDirection = regexp.MustCompile(`\bDirection="([^"]*)"`)
-	rePinHidden    = regexp.MustCompile(`\bbHidden=(True|False)\b`)
-	rePinFriendly  = regexp.MustCompile(`PinFriendlyName=NSLOCTEXT\("[^"]*",\s*"[^"]*",\s*"([^"]+)"\)`)
-	reLinkedTo     = regexp.MustCompile(`LinkedTo=\(([^)]*)\)`)
-	reLinkedRef    = regexp.MustCompile(`(\w+)\s+([A-F0-9]{32})`)
+	reBeginObject     = regexp.MustCompile(`^Begin Object Class=/Script/[^.]+\.(\w+) Name="(\w+)"`)
+	reFunctionRef     = regexp.MustCompile(`FunctionReference=\([^)]*MemberName="([^"]+)"`)
+	reEventRef        = regexp.MustCompile(`EventReference=\([^)]*MemberName="([^"]+)"`)
+	reVariableRef     = regexp.MustCompile(`VariableReference=\([^)]*MemberName="([^"]+)"`)
+	reCustomEventName = regexp.MustCompile(`CustomFunctionName="([^"]+)"`)
+	rePinId           = regexp.MustCompile(`\bPinId=([A-F0-9]{32})\b`)
+	rePinName         = regexp.MustCompile(`\bPinName="([^"]*)"`)
+	rePinCategory     = regexp.MustCompile(`PinType\.PinCategory="([^"]*)"`)
+	rePinDirection    = regexp.MustCompile(`\bDirection="([^"]*)"`)
+	rePinHidden       = regexp.MustCompile(`\bbHidden=(True|False)\b`)
+	rePinFriendly     = regexp.MustCompile(`PinFriendlyName=NSLOCTEXT\("[^"]*",\s*"[^"]*",\s*"([^"]+)"\)`)
+	reLinkedTo        = regexp.MustCompile(`LinkedTo=\(([^)]*)\)`)
+	reLinkedRef       = regexp.MustCompile(`(\w+)\s+([A-F0-9]{32})`)
 )
 
 type linkedRef struct {
@@ -125,6 +126,13 @@ func ParseBlueprint(text string) (Graph, error) {
 		}
 
 		if m := reEventRef.FindStringSubmatch(line); m != nil {
+			if ns.node.Label == "" {
+				ns.node.Label = m[1]
+			}
+			continue
+		}
+
+		if m := reCustomEventName.FindStringSubmatch(line); m != nil {
 			if ns.node.Label == "" {
 				ns.node.Label = m[1]
 			}
@@ -255,7 +263,7 @@ func classToKind(className string) NodeKind {
 	switch className {
 	case "K2Node_FunctionEntry":
 		return KindEntry
-	case "K2Node_Event":
+	case "K2Node_Event", "K2Node_CustomEvent":
 		return KindEvent
 	case "K2Node_IfThenElse":
 		return KindBranch
