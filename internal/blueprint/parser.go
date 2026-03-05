@@ -26,6 +26,7 @@ type Node struct {
 	ID    string
 	Kind  NodeKind
 	Label string
+	Scope string
 }
 
 type Edge struct {
@@ -45,6 +46,7 @@ var (
 	reFunctionRef     = regexp.MustCompile(`FunctionReference=\([^)]*MemberName="([^"]+)"`)
 	reEventRef        = regexp.MustCompile(`EventReference=\([^)]*MemberName="([^"]+)"`)
 	reVariableRef     = regexp.MustCompile(`VariableReference=\([^)]*MemberName="([^"]+)"`)
+	reMemberScope     = regexp.MustCompile(`\bMemberScope="([^"]+)"`)
 	reCustomEventName = regexp.MustCompile(`CustomFunctionName="([^"]+)"`)
 	rePinId           = regexp.MustCompile(`\bPinId=([A-F0-9]{32})\b`)
 	rePinName         = regexp.MustCompile(`\bPinName="([^"]*)"`)
@@ -142,6 +144,9 @@ func ParseBlueprint(text string) (Graph, error) {
 		if m := reVariableRef.FindStringSubmatch(line); m != nil {
 			if ns.varName == "" {
 				ns.varName = m[1]
+			}
+			if ms := reMemberScope.FindStringSubmatch(line); ms != nil && ns.node.Scope == "" {
+				ns.node.Scope = ms[1]
 			}
 			continue
 		}
@@ -242,21 +247,12 @@ func ParseBlueprint(text string) (Graph, error) {
 		}
 	}
 
-	// Phase 4: keep only nodes that appear in at least one edge.
-	connected := map[string]bool{}
-	for _, e := range edges {
-		connected[e.From] = true
-		connected[e.To] = true
-	}
-
-	var filteredNodes []Node
+	var allNodes []Node
 	for _, ns := range nodes {
-		if connected[ns.node.ID] {
-			filteredNodes = append(filteredNodes, ns.node)
-		}
+		allNodes = append(allNodes, ns.node)
 	}
 
-	return Graph{Nodes: filteredNodes, Edges: edges}, nil
+	return Graph{Nodes: allNodes, Edges: edges}, nil
 }
 
 func classToKind(className string) NodeKind {

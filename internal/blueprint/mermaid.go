@@ -24,6 +24,37 @@ func GenerateMermaid(g Graph) string {
 		nodeMap[n.ID] = n
 	}
 
+	scopeToComp := map[string]int{}
+	for i, comp := range components {
+		for _, nodeID := range comp {
+			n := nodeMap[nodeID]
+			if (n.Kind == KindEvent || n.Kind == KindEntry) && n.Label != "" {
+				scopeToComp[n.Label] = i
+			}
+		}
+	}
+	absorbed := make([]bool, len(components))
+	for i, comp := range components {
+		if len(comp) != 1 {
+			continue
+		}
+		n := nodeMap[comp[0]]
+		if n.Scope == "" {
+			continue
+		}
+		if target, ok := scopeToComp[n.Scope]; ok && target != i {
+			components[target] = append(components[target], comp[0])
+			absorbed[i] = true
+		}
+	}
+	var finalComponents [][]string
+	for i, comp := range components {
+		if !absorbed[i] {
+			finalComponents = append(finalComponents, comp)
+		}
+	}
+	components = finalComponents
+
 	for i, comp := range components {
 		subgraphName := fmt.Sprintf("Graph %d", i+1)
 		for _, nodeID := range comp {
@@ -38,16 +69,17 @@ func GenerateMermaid(g Graph) string {
 		for _, nodeID := range comp {
 			n := nodeMap[nodeID]
 			label := sanitizeLabel(n.Label)
+			nodeText := label + "<br/><small>" + n.ID + "</small>"
 			var nodeDef string
 			switch n.Kind {
 			case KindEntry, KindEvent:
-				nodeDef = fmt.Sprintf("        %s([\"%s\"]):::entry\n", n.ID, label)
+				nodeDef = fmt.Sprintf("        %s([\"%s\"]):::entry\n", n.ID, nodeText)
 			case KindBranch:
-				nodeDef = fmt.Sprintf("        %s{\"%s\"}:::branch\n", n.ID, label)
+				nodeDef = fmt.Sprintf("        %s{\"%s\"}:::branch\n", n.ID, nodeText)
 			case KindVariable:
-				nodeDef = fmt.Sprintf("        %s([\"%s\"]):::variable\n", n.ID, label)
+				nodeDef = fmt.Sprintf("        %s([\"%s\"]):::variable\n", n.ID, nodeText)
 			default:
-				nodeDef = fmt.Sprintf("        %s[\"%s\"]\n", n.ID, label)
+				nodeDef = fmt.Sprintf("        %s[\"%s\"]\n", n.ID, nodeText)
 			}
 			sb.WriteString(nodeDef)
 		}

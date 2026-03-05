@@ -27,11 +27,11 @@ func TestGenerateMermaidNodeShapes(t *testing.T) {
 		label    string
 		contains string
 	}{
-		{"Entry", blueprint.KindEntry, "MyEntry", "myFunc", `MyEntry(["myFunc"])`},
-		{"Event", blueprint.KindEvent, "MyEvent", "OnTick", `MyEvent(["OnTick"])`},
-		{"Branch", blueprint.KindBranch, "MyBranch", "Branch", `MyBranch{"Branch"}`},
-		{"Default", blueprint.KindDefault, "MyNode", "doStuff", `MyNode["doStuff"]`},
-		{"Variable", blueprint.KindVariable, "MyVar", "hitActor", `MyVar(["hitActor"]):::variable`},
+		{"Entry", blueprint.KindEntry, "MyEntry", "myFunc", `MyEntry(["myFunc<br/><small>MyEntry</small>"])`},
+		{"Event", blueprint.KindEvent, "MyEvent", "OnTick", `MyEvent(["OnTick<br/><small>MyEvent</small>"])`},
+		{"Branch", blueprint.KindBranch, "MyBranch", "Branch", `MyBranch{"Branch<br/><small>MyBranch</small>"}`},
+		{"Default", blueprint.KindDefault, "MyNode", "doStuff", `MyNode["doStuff<br/><small>MyNode</small>"]`},
+		{"Variable", blueprint.KindVariable, "MyVar", "hitActor", `MyVar(["hitActor<br/><small>MyVar</small>"]):::variable`},
 	}
 
 	for _, tc := range tests {
@@ -145,6 +145,54 @@ func TestGenerateMermaidSubgraphs(t *testing.T) {
 	}
 }
 
+func TestGenerateMermaidNodeSubtitle(t *testing.T) {
+	g := blueprint.Graph{
+		Nodes: []blueprint.Node{
+			{ID: "K2Node_CallFunction_7", Kind: blueprint.KindDefault, Label: "GetActorLocation"},
+			{ID: "K2Node_IfThenElse_8", Kind: blueprint.KindBranch, Label: "Branch"},
+			{ID: "K2Node_Event_0", Kind: blueprint.KindEvent, Label: "OnTick"},
+			{ID: "K2Node_VariableGet_3", Kind: blueprint.KindVariable, Label: "myVar"},
+		},
+		Edges: []blueprint.Edge{
+			{From: "K2Node_CallFunction_7", To: "K2Node_IfThenElse_8", Kind: blueprint.ExecEdge},
+			{From: "K2Node_Event_0", To: "K2Node_VariableGet_3", Kind: blueprint.ExecEdge},
+		},
+	}
+	out := blueprint.GenerateMermaid(g)
+
+	cases := []string{
+		`K2Node_CallFunction_7["GetActorLocation<br/><small>K2Node_CallFunction_7</small>"]`,
+		`K2Node_IfThenElse_8{"Branch<br/><small>K2Node_IfThenElse_8</small>"}`,
+		`K2Node_Event_0(["OnTick<br/><small>K2Node_Event_0</small>"])`,
+		`K2Node_VariableGet_3(["myVar<br/><small>K2Node_VariableGet_3</small>"])`,
+	}
+	for _, want := range cases {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected %q in output\ngot:\n%s", want, out)
+		}
+	}
+}
+
+func TestGenerateMermaidSubgraphNameNoSubtitle(t *testing.T) {
+	g := blueprint.Graph{
+		Nodes: []blueprint.Node{
+			{ID: "K2Node_CustomEvent_5", Kind: blueprint.KindEvent, Label: "OnFire"},
+			{ID: "K2Node_CallFunction_2", Kind: blueprint.KindDefault, Label: "SpawnActor"},
+		},
+		Edges: []blueprint.Edge{
+			{From: "K2Node_CustomEvent_5", To: "K2Node_CallFunction_2", Kind: blueprint.ExecEdge},
+		},
+	}
+	out := blueprint.GenerateMermaid(g)
+
+	if !strings.Contains(out, `subgraph sg_0 ["OnFire"]`) {
+		t.Errorf("subgraph header should be display label only, got:\n%s", out)
+	}
+	if strings.Contains(out, `subgraph sg_0 ["OnFire<br/>`) {
+		t.Errorf("subgraph header must not include graph name subtitle, got:\n%s", out)
+	}
+}
+
 func TestGenerateMermaidRoundTrip(t *testing.T) {
 	data, err := os.ReadFile("fixtures/case1.txt")
 	if err != nil {
@@ -164,5 +212,92 @@ func TestGenerateMermaidRoundTrip(t *testing.T) {
 	}
 	if !strings.Contains(out, `(["`) {
 		t.Error("expected at least one pill shape in output")
+	}
+
+	subtitleChecks := []string{
+		`<br/><small>K2Node_FunctionEntry_0</small>`,
+		`<br/><small>K2Node_CallFunction_7</small>`,
+		`<br/><small>K2Node_IfThenElse_8</small>`,
+	}
+	for _, want := range subtitleChecks {
+		if !strings.Contains(out, want) {
+			t.Errorf("expected subtitle %q in output", want)
+		}
+	}
+}
+
+func TestGenerateMermaidUnconnectedNode(t *testing.T) {
+	g := blueprint.Graph{
+		Nodes: []blueprint.Node{
+			{ID: "K2Node_CallFunction_1", Kind: blueprint.KindDefault, Label: "GetActorLocation"},
+			{ID: "K2Node_CallFunction_2", Kind: blueprint.KindDefault, Label: "SetActorLocation"},
+			{ID: "K2Node_VariableSet_0", Kind: blueprint.KindVariable, Label: "myVar"}, // no edges
+		},
+		Edges: []blueprint.Edge{
+			{From: "K2Node_CallFunction_1", To: "K2Node_CallFunction_2", Kind: blueprint.ExecEdge},
+		},
+	}
+	out := blueprint.GenerateMermaid(g)
+	if !strings.Contains(out, `K2Node_VariableSet_0`) {
+		t.Errorf("unconnected node should appear in output, got:\n%s", out)
+	}
+}
+
+func TestParseCase4UnconnectedNode(t *testing.T) {
+	data, err := os.ReadFile("fixtures/case4.txt")
+	if err != nil {
+		t.Fatalf("cannot read fixture: %v", err)
+	}
+	g, err := blueprint.ParseBlueprint(string(data))
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	found := false
+	for _, n := range g.Nodes {
+		if n.ID == "K2Node_VariableSet_0" {
+			found = true
+			if n.Scope != "testFunctionB" {
+				t.Errorf("expected Scope=%q, got %q", "testFunctionB", n.Scope)
+			}
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected K2Node_VariableSet_0 to be present in parsed graph")
+	}
+
+	out := blueprint.GenerateMermaid(g)
+
+	// Only one subgraph should exist — no orphan "Graph N".
+	if strings.Count(out, "subgraph") != 1 {
+		t.Errorf("expected exactly 1 subgraph, got:\n%s", out)
+	}
+	if !strings.Contains(out, "K2Node_VariableSet_0") {
+		t.Errorf("unconnected node must appear in output:\n%s", out)
+	}
+	if strings.Contains(out, `"Graph 2"`) {
+		t.Errorf("disconnected node should be merged into its scope subgraph, not 'Graph 2':\n%s", out)
+	}
+}
+
+func TestGenerateMermaidScopeMerge(t *testing.T) {
+	g := blueprint.Graph{
+		Nodes: []blueprint.Node{
+			{ID: "K2Node_FunctionEntry_0", Kind: blueprint.KindEntry, Label: "myFunc"},
+			{ID: "K2Node_CallFunction_1", Kind: blueprint.KindDefault, Label: "DoThing"},
+			{ID: "K2Node_VariableSet_0", Kind: blueprint.KindVariable, Label: "Set myVar", Scope: "myFunc"},
+		},
+		Edges: []blueprint.Edge{
+			{From: "K2Node_FunctionEntry_0", To: "K2Node_CallFunction_1", Kind: blueprint.ExecEdge},
+		},
+	}
+	out := blueprint.GenerateMermaid(g)
+
+	if strings.Count(out, "subgraph") != 1 {
+		t.Errorf("expected 1 subgraph after scope merge, got:\n%s", out)
+	}
+	if !strings.Contains(out, "K2Node_VariableSet_0") {
+		t.Errorf("scoped isolated node must appear in output:\n%s", out)
 	}
 }

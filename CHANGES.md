@@ -1,4 +1,10 @@
-﻿# 1.1.0 (02-03-2026)
+﻿# 1.2.0 (05-03-2026)
+## Features
+- Node Subtitle: Each node now shows its Blueprint graph name (e.g. K2Node_CallFunction_7) as a small subtitle
+- Unconnected Nodes: Nodes with no wired pins are now included in the diagram
+- Scope-Aware Grouping: Unconnected nodes with a MemberScope are placed in the matching function subgraph
+
+# 1.1.0 (02-03-2026)
 ## Features
 - Graph Grouping: Disconnected execution chains are now grouped into Mermaid subgraphs
 - Improved Subgraph Naming: Subgraphs are automatically named after the entry point (Event or Function Entry) they contain
